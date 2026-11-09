@@ -1,0 +1,28 @@
+{
+ "note": "배포된 서비스에서 window.__seatSoundCheck(i, mode)로 브라우저 합성 IR의 C80(500~2000Hz)을 다시 계산해 지도 값(추적 지표)과 비교한 기록. seat_index는 웹 데이터의 좌석 번호(0부터).",
+ "site": "https://juhwanseok.github.io/seat-sound-map/",
+ "measured_at": "2026-11-09T23:42:29.081Z",
+ "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Claude/4.23118.0 Chrome/152.0.7977.167 Safari/537.36 MSIX",
+ "band": "1kHz (500-2000Hz)",
+ "n": 16,
+ "mean_abs_diff_dB": 0.44,
+ "max_abs_diff_dB": 1.1,
+ "rows": [
+  {"mode": "natural", "seat_index": 0, "C80_browser": 2.55, "C80_metric": 2.1, "diff": 0.45},
+  {"mode": "natural", "seat_index": 100, "C80_browser": 2.73, "C80_metric": 2.1, "diff": 0.63},
+  {"mode": "natural", "seat_index": 300, "C80_browser": 1.71, "C80_metric": 2.0, "diff": -0.29},
+  {"mode": "natural", "seat_index": 500, "C80_browser": 0.0, "C80_metric": 1.1, "diff": -1.1},
+  {"mode": "natural", "seat_index": 700, "C80_browser": 2.28, "C80_metric": 2.7, "diff": -0.42},
+  {"mode": "natural", "seat_index": 900, "C80_browser": 3.31, "C80_metric": 3.8, "diff": -0.49},
+  {"mode": "natural", "seat_index": 1000, "C80_browser": 2.13, "C80_metric": 2.3, "diff": -0.17},
+  {"mode": "natural", "seat_index": 1150, "C80_browser": 2.66, "C80_metric": 3.4, "diff": -0.74},
+  {"mode": "pa", "seat_index": 0, "C80_browser": 6.52, "C80_metric": 6.4, "diff": 0.12},
+  {"mode": "pa", "seat_index": 100, "C80_browser": 6.76, "C80_metric": 6.8, "diff": -0.04},
+  {"mode": "pa", "seat_index": 300, "C80_browser": 7.41, "C80_metric": 7.1, "diff": 0.31},
+  {"mode": "pa", "seat_index": 500, "C80_browser": 4.48, "C80_metric": 5.2, "diff": -0.72},
+  {"mode": "pa", "seat_index": 700, "C80_browser": 6.48, "C80_metric": 6.8, "diff": -0.32},
+  {"mode": "pa", "seat_index": 900, "C80_browser": 4.79, "C80_metric": 5.2, "diff": -0.41},
+  {"mode": "pa", "seat_index": 1000, "C80_browser": 6.73, "C80_metric": 7.4, "diff": -0.67},
+  {"mode": "pa", "seat_index": 1150, "C80_browser": 8.54, "C80_metric": 8.4, "diff": 0.14}
+ ]
+}
