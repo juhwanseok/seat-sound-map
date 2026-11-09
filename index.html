@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>객석 소리지도 — 우리금융아트홀</title>
+<meta name="description" content="올림픽공원 공연장 3D 실측 공공데이터로 계산한 좌석별 소리 비교. 예매 전에 자리마다 소리가 어떻게 다른지 지도와 미리듣기로 확인합니다.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23b4462f'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>객석 소리지도 <span class="venue">우리금융아트홀</span></h1>
+    <p class="lead">공연장 3D 실측 데이터로 좌석 1,172석의 소리를 계산했습니다. 예매 전에 자리마다 <strong>얼마나 또렷하고, 크고, 감싸는지</strong> 비교해 보세요.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="controls" aria-label="보기 설정">
+    <div class="ctl">
+      <span class="ctl-label" id="lbl-mode">소리 조건</span>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-mode">
+        <button type="button" role="radio" data-mode="natural" aria-checked="true">무대 육성</button>
+        <button type="button" role="radio" data-mode="pa" aria-checked="false">스피커 확성 <small>가정</small></button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label class="ctl-label" for="metric">지표</label>
+      <select id="metric">
+        <option value="TOT">종합 (대사·음량·공간감 평균)</option>
+        <option value="D50">대사가 또렷한 정도</option>
+        <option value="C80">음이 또렷한 정도</option>
+        <option value="G">소리 크기</option>
+        <option value="LF">감싸는 느낌 (공간감)</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <span class="ctl-label" id="lbl-floor">층</span>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-floor">
+        <button type="button" role="radio" data-floor="1" aria-checked="true">1층 <small id="n1"></small></button>
+        <button type="button" role="radio" data-floor="2" aria-checked="false">2층 <small id="n2"></small></button>
+      </div>
+    </div>
+  </section>
+
+  <p class="mode-note" id="mode-note"></p>
+
+  <div class="layout">
+    <section class="map-card" aria-label="좌석 지도">
+      <div class="stage-label">무대</div>
+      <svg id="map" role="img" aria-label="좌석 배치도. 좌석을 누르면 오른쪽에 자세한 내용이 나옵니다."></svg>
+      <div class="legend">
+        <span>공연장 안에서 하위</span>
+        <div class="ramp" aria-hidden="true"></div>
+        <span>상위</span>
+      </div>
+      <p class="hint">좌석을 누르면 자세히 보고 들어볼 수 있습니다. 색은 이 공연장 안에서의 <strong>상대 순위</strong>입니다.</p>
+      <div class="top10">
+        <h3 id="top-title">이 지표 상위 10석</h3>
+        <ol id="top-list"></ol>
+      </div>
+    </section>
+
+    <aside class="detail" id="detail" aria-live="polite">
+      <div class="empty" id="empty">
+        <h2>좌석을 골라 보세요</h2>
+        <p>지도에서 좌석을 누르거나 왼쪽 아래 상위 10석에서 고르면, 이 자리의 소리 특성과 미리듣기가 여기에 나옵니다.</p>
+      </div>
+      <div id="seat" hidden>
+        <h2 id="seat-title"></h2>
+        <p class="seat-sub" id="seat-sub"></p>
+        <div class="bars" id="bars"></div>
+        <div class="listen">
+          <button type="button" class="btn primary" id="play-seat">▶ 이 자리에서 듣기</button>
+          <button type="button" class="btn" id="play-dry">▶ 원음</button>
+          <button type="button" class="btn" id="stop" hidden>■ 정지</button>
+          <button type="button" class="btn ghost" id="add-compare">비교에 담기</button>
+        </div>
+        <p class="small">미리듣기 소리(박수·피아노)는 직접 합성한 음원입니다. 헤드폰을 권장합니다.</p>
+        <figure class="ir">
+          <canvas id="ir" width="560" height="220" aria-label="이 좌석의 소리 도착 그래프"></canvas>
+          <figcaption>소리 도착 그래프 (1kHz). 맨 앞 막대가 무대에서 곧장 온 소리, 뒤쪽이 벽·천장에서 반사돼 온 소리입니다. 점선 이후가 잔향입니다.</figcaption>
+        </figure>
+        <details class="raw">
+          <summary>계산값 보기</summary>
+          <table id="raw-table"></table>
+        </details>
+      </div>
+      <div class="compare" id="compare" hidden>
+        <h3>두 자리 비교</h3>
+        <table id="cmp-table"></table>
+        <div class="listen" id="cmp-play"></div>
+        <button type="button" class="btn ghost" id="cmp-clear">비교 비우기</button>
+      </div>
+    </aside>
+  </div>
+
+  <section class="info" id="about">
+    <h2>어떻게 계산했나요</h2>
+    <ol class="steps">
+      <li><strong>실측 형상</strong> — 한국체육산업개발이 공개한 우리금융아트홀 3D 데이터 중 실측 스캔 점군(2,490만 점)으로 공연장 내부를 0.2m 격자로 만들었습니다.</li>
+      <li><strong>좌석 위치</strong> — 같은 데이터의 3D 모델에서 의자 쿠션을 하나씩 찾아 좌석 위치를 얻었습니다. 2층 352석은 공식 좌석 수와 같고, 1층 820석은 공식 832석에서 휠체어석 12석을 뺀 수와 같습니다.</li>
+      <li><strong>소리 추적</strong> — 무대에서 소리 입자 30만 개를 내보내 벽·천장·객석에 부딪히며 반사되는 길을 0.2초까지 따라가고, 각 좌석에 언제 얼마나 도착하는지 셌습니다. 그 뒤의 잔향은 감쇠율로 이었습니다. 저·중·고음 3개 대역을 각각 4번씩 계산해 평균했습니다.</li>
+      <li><strong>지표</strong> — 공연장 음향에서 표준으로 쓰는 값(ISO 3382-1의 D50, C80, G, LF)을 좌석마다 구하고, 공연장 안에서의 순위로 색을 칠했습니다.</li>
+    </ol>
+
+    <h2>꼭 알아 두세요</h2>
+    <ul class="caveats">
+      <li><strong>실제 측정값이 아닙니다.</strong> 이 공연장에서 잰 음향 자료가 없어, 벽·객석의 흡음 정도를 일반적인 값으로 가정해 계산했습니다. 그래서 숫자 자체보다 <strong>좌석끼리의 상대 비교</strong>로 봐 주세요. 객석·벽·천장의 흡음 가정을 바꿔 계산해도 좌석 순위는 거의 그대로였습니다(순위 상관 0.98 이상).</li>
+      <li><strong>기본 지도는 마이크 없는 공연 기준입니다.</strong> "무대 육성" 지도는 낭독·어쿠스틱 공연처럼 배우의 목소리가 그대로 퍼질 때의 결과입니다. 스피커로 소리를 키우는 공연은 "스피커 확성" 지도를 참고로 보세요.</li>
+      <li><strong>스피커 확성은 가정입니다.</strong> 뮤지컬은 보통 스피커로 소리를 키우지만, 이 공연장의 실제 스피커 위치는 공개되어 있지 않습니다. 무대 입구 양옆과 위쪽 가운데에 스피커가 있다고 가정했습니다. 실제 공연에서는 발코니 아래 같은 곳에 보조 스피커를 더 다는 경우가 많습니다.</li>
+      <li>관객의 머리, 앞좌석 등받이, 무대 세트는 계산에 없습니다. 공연마다 무대 구성이 바뀌면 소리도 달라집니다.</li>
+      <li>시야(무대가 잘 보이는지)는 이 지도와 별개입니다.</li>
+    </ul>
+
+    <h2>사용한 공공데이터</h2>
+    <ul class="sources">
+      <li>한국체육산업개발(주) 「올림픽공원 공연장 실감형 콘텐츠」 — 공공데이터포털 <a href="https://www.data.go.kr/data/15127487/fileData.do" rel="noopener">15127487</a> (우리금융아트홀 GLB 3D 모델, E57 점군)</li>
+    </ul>
+    <p class="small">이 페이지는 2026년도 한국체육산업개발(주) 공공데이터 활용 경진대회 출품 시연본이며, 기관의 공식 서비스가 아닙니다. 개인정보를 수집하지 않고, 외부 서버에 요청을 보내지 않습니다.</p>
+  </section>
+</main>
+
+<script src="data/seats.js"></script>
+<script src="data/env.js"></script>
+<script src="data/dry.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
