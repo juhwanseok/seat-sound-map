@@ -19,8 +19,8 @@
   };
   const UNIT = { C80: ' dB', G: ' dB', D50: '', LF: '' };
   const MODE_NOTE = {
-    natural: '배우가 마이크 없이 무대 앞 가운데에서 말하거나 노래할 때의 소리입니다(낭독·어쿠스틱 공연 기준). 스피커를 쓰는 공연은 “스피커 확성”도 함께 보세요.',
-    pa: '무대 입구 양옆과 위쪽 가운데 스피커로 소리를 키웠다고 가정한 결과입니다. 이 공연장의 음향장비 목록은 공개돼 있지만 설치 위치가 없어, 위치와 구성을 단순화해 가정했습니다. 참고용으로만 보세요.',
+    natural: '배우가 마이크 없이 무대 앞 가운데에서 말하거나 노래할 때의 소리입니다(낭독·어쿠스틱 공연 기준). 공연장 구조 자체가 소리에 주는 영향을 보여 줍니다.',
+    pa: '뮤지컬처럼 스피커로 소리를 키운 경우입니다. 공개된 음향장비 목록(센터·발코니 아래·사이드필·프런트필)의 구성을 따랐고, 설치 위치와 음량 비율은 가정했습니다.',
   };
 
   // 종합 순위: 모드별 D50·G·LF 백분위 평균을 다시 백분위로
@@ -30,7 +30,7 @@
     avg.forEach(([i], r) => { SEATS[i][m].p.TOT = Math.round(r / (avg.length - 1) * 100); });
   }
 
-  const state = { mode: 'natural', metric: 'TOT', floor: 1, sel: null, cmp: [] };
+  const state = { mode: 'pa', metric: 'TOT', floor: 1, sel: null, cmp: [] };
   const $ = id => document.getElementById(id);
 
   // viridis 근사

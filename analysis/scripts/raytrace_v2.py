@@ -1,7 +1,8 @@
 """v2 형상 기반 음향: v1 레이 추적 + 대역 3개(250/1k/4k) + 다중 음원·지향성(확성 PA 모드) + 시드 반복
 모드
  - natural : 무대 앞 중앙 배우 1명(무지향), 무확성 생음
- - pa      : 프로시니엄 좌·우 메인 + 상단 센터 스피커(가정 배치), 객석 중심 조준, 에너지 지향 패턴 ((1+cos)/2)^q
+ - pa      : 기관 공개 음향장비 목록 구성(센터 클러스터 + 프런트필 6 + 사이드필 4 + 발코니 아래 4), 위치·출력 비율·지연은 가정
+ - pa_simple: r01~r02의 단순 가정(좌·우 메인 + 센터)
 흡음률·산란·지향성·스피커 위치는 모두 가정값 → 결과는 좌석 간 상대 비교용. 실측 임펄스응답 검증 없음.
 산출: out/v2/<mode>_<band>_s<seed>.npz (좌석별 반사 에너지 히스토그램 1ms x 200, 측면 성분, 직접음, 도착 시각, T_fit)
 """
@@ -40,10 +41,25 @@ seats = np.load('out/seat_metrics_v0.npz')['seats']; NS = len(seats)
 ear = seats + np.array([0, 0.75, 0])
 excluded = (seats[:, 1] > 5.0) & (seats[:, 1] < 6.6)   # 설계 모델-실측 불일치 22석 (v1 참고)
 AIM = ear[~excluded].mean(0)
+# 확성(pa): 기관 대관 자료 음향장비 목록(f13.xls)의 구성을 따른다 — CENTER 12(한 덩어리 센터 클러스터로 모델링),
+# FRONT FILL 6, SIDE FILL 4, UNDER BALCONY 4. 목록에 설치 위치가 없으므로 위치·조준·출력 비율·지연은 가정값.
+# 우퍼(저역 전용), 서라운드·천장(효과음용)은 대사·노래 재생에 쓰지 않는다고 보고 뺐다.
+# 지연: 보조 스피커는 센터와의 거리만큼 늦추고(파면 정렬), 발코니 아래는 +10ms 더 늦춰 센터 소리가 먼저 들리게 한다(선행음 효과).
+_fl = ~excluded & (seats[:, 1] < 5.0)
+_L, _Rt = ear[_fl & (seats[:, 2] < -9)].mean(0), ear[_fl & (seats[:, 2] > 3)].mean(0)
+_CTR = np.array([-20.0, 7.5, -3.7])
+def _dly(pos, extra=0.0): return float(np.linalg.norm(np.array(pos) - _CTR) / 343.0 * 1000 + extra)
 SRC = {'natural': [dict(pos=[-17.0, 0.4, -3.86], aim=None)],
-       'pa': [dict(pos=[-19.8, 6.0, -13.0], aim=AIM),    # 좌 메인
-              dict(pos=[-19.8, 6.0, 5.6], aim=AIM),      # 우 메인
-              dict(pos=[-20.0, 7.5, -3.7], aim=AIM)]}    # 센터
+       'pa_simple': [dict(pos=[-19.8, 6.0, -13.0], aim=AIM),    # r01~r02 단순 가정: 좌·우 메인 + 센터
+                     dict(pos=[-19.8, 6.0, 5.6], aim=AIM),
+                     dict(pos=[-20.0, 7.5, -3.7], aim=AIM)],
+       'pa': ([dict(pos=_CTR.tolist(), aim=AIM, share=0.70, delay=0.0, name='center')]
+              + [dict(pos=[-20.6, -0.9, z], aim=[-23.0, -1.2, z], share=0.01, q=2, delay=_dly([-20.6, -0.9, z]), name='front_fill')
+                 for z in (-12.0, -8.0, -4.5, -1.0, 2.5, 5.5)]
+              + [dict(pos=[-19.8, y, z], aim=(_L if z < 0 else _Rt), share=0.03, q=2, delay=_dly([-19.8, y, z]), name='side_fill')
+                 for z in (-13.0, 5.6) for y in (2.5, 4.5)]
+              + [dict(pos=[-36.8, 5.2, z], aim=[-40.0, 3.0, z], share=0.03, q=3, delay=_dly([-36.8, 5.2, z], 10.0), name='under_balcony')
+                 for z in (-12.0, -6.0, 0.0, 6.0)])}
 
 
 def cell(p):
@@ -92,7 +108,7 @@ def los_blocked(src):
     return r, bl
 
 
-LOS = {mode: [los_blocked(np.array(s['pos'])) for s in srcs] for mode, srcs in SRC.items()}
+LOS = {mode: [los_blocked(np.array(s['pos'], float)) for s in SRC[mode]] for mode in sorted(set(a.modes) | {'natural'})}
 os.makedirs(a.outdir, exist_ok=True)
 
 
@@ -103,16 +119,18 @@ def run(mode, band, seed):
         v = rng.normal(size=(n, 3)); return v / np.linalg.norm(v, axis=1, keepdims=True)
 
     hist = np.zeros((NS, NB)); lat = np.zeros((NS, NB)); Ed = np.zeros(NS); tdir_E = np.zeros(NS); lost = 0.0
-    srcs = SRC[mode]; nsrc = len(srcs); per = a.rays // nsrc
+    srcs = SRC[mode]; nsrc = len(srcs)
     for si, s in enumerate(srcs):
         src = np.array(s['pos'], float)
         aim = None if s['aim'] is None else (np.asarray(s['aim']) - src) / np.linalg.norm(np.asarray(s['aim']) - src)
+        share = s.get('share', 1.0 / nsrc); q = s.get('q', P['q']); delay = s.get('delay', 0.0)   # 출력 비율·지향성·지연(ms)
+        per = max(8000, int(a.rays * share)) if 'share' in s else a.rays // nsrc
         nb = max(1, int(np.ceil(per / a.batch)))
         for b in range(nb):
             n = min(a.batch, per - b * a.batch)
             p = np.repeat(src[None], n, 0); d = rand_dirs(n)
-            E = directivity(d, aim, P['q']) / (per * nsrc)
-            dist = np.zeros(n); nref = np.zeros(n, np.int16); alive = np.ones(n, bool)
+            E = directivity(d, aim, q) * share / per
+            dist = np.full(n, C * delay / 1000); nref = np.zeros(n, np.int16); alive = dist < C * TMAX
             for it in range(int(1.6 * C * TMAX / DS)):
                 ia = np.nonzero(alive)[0]
                 if len(ia) == 0:
@@ -146,8 +164,8 @@ def run(mode, band, seed):
                             w = E[rid] * DS / VS[s_]
                             np.add.at(hist, (s_, tb), w); np.add.at(lat, (s_, tb), w * d[rid, 2] ** 2)
         r, bl = LOS[mode][si]; dsr = (ear - src) / r[:, None]
-        e_d = directivity(dsr, aim, P['q']) / nsrc * np.exp(-P['m_air'] * r) / (4 * np.pi * r ** 2) * np.where(bl, 0.1, 1.0)
-        Ed += e_d; tdir_E += e_d * (r / C * 1000)
+        e_d = directivity(dsr, aim, q) * share * np.exp(-P['m_air'] * r) / (4 * np.pi * r ** 2) * np.where(bl, 0.1, 1.0)
+        Ed += e_d; tdir_E += e_d * (r / C * 1000 + delay)
     tdir = tdir_E / np.maximum(Ed, 1e-30)   # 직접음 도착 시각(ms), 음원이 여럿이면 에너지 가중 평균
     tot = hist[~excluded].sum(0); tt = np.arange(NB); w = (tt >= 60) & (tt < 190) & (tot > 0)
     T_fit = -60 / np.polyfit(tt[w] / 1000, 10 * np.log10(tot[w]), 1)[0]
@@ -164,9 +182,11 @@ for mode in a.modes:
             log[f'{mode}_{band}_s{seed}'] = {'T_fit': round(float(T), 3), 'lost': round(float(lost), 4)}
             print(f'{mode:8s} {band:5d}Hz seed{seed}  T_fit {T:.2f}s  escaped {lost:.3f}  ({time.time() - t0:.0f}s)', flush=True)
 np.savez(f'{a.outdir}/meta.npz', seats=seats, ear=ear, excluded=excluded, free=free,
-         los_natural=LOS['natural'][0][1], los_pa=np.array([l[1] for l in LOS['pa']]), r_natural=LOS['natural'][0][0])
+         los_natural=LOS['natural'][0][1], r_natural=LOS['natural'][0][0],
+         **({'los_pa': np.array([l[1] for l in LOS['pa']])} if 'pa' in LOS else {}))
 json.dump({'bands': BAND,
-           'sources': {k: [{'pos': s['pos'], 'aim': None if s['aim'] is None else np.round(s['aim'], 2).tolist()} for s in v]
-                       for k, v in SRC.items()},
+           'sources': {k: [{'pos': [round(float(x), 2) for x in s['pos']], 'aim': None if s['aim'] is None else np.round(s['aim'], 2).tolist(),
+                            **{f: (round(float(s[f]), 2) if isinstance(s[f], (int, float)) else s[f]) for f in ('share', 'q', 'delay', 'name') if f in s}}
+                           for s in v] for k, v in SRC.items()},
            'runs': log, 'rays': a.rays, 'R': a.R},
           open(f'{a.outdir}/meta.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
