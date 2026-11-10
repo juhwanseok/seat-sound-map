@@ -1,0 +1,105 @@
+{
+ "condition": "스피커 확성, 1kHz, 시드 1·2 평균. 기준 = 공개 장비 목록 구성(pa)",
+ "n_under_balcony": 336,
+ "base": {
+  "under_minus_rest_floor1_G_dB": -1.03,
+  "same_dist_2F_minus_under_G_dB": -1.49,
+  "same_dist_D50_2F": 0.67,
+  "same_dist_D50_under": 0.9,
+  "same_dist_G_2F": 2.6,
+  "same_dist_G_under": 4.1,
+  "floor2_minus_floor1_G_dB": -2.35,
+  "floor2_minus_floor1_D50": -0.09
+ },
+ "variants": {
+  "pa_noub": {
+   "label": "발코니 아래 4대 끔",
+   "rank_corr_vs_base": {
+    "C80": 0.95,
+    "D50": 0.931,
+    "G": 0.643,
+    "LF": 0.904
+   },
+   "under_minus_rest_floor1_G_dB": -3.37,
+   "same_dist_2F_minus_under_G_dB": 1.73,
+   "same_dist_D50_2F": 0.67,
+   "same_dist_D50_under": 0.81,
+   "same_dist_G_2F": 2.5,
+   "same_dist_G_under": 0.8,
+   "floor2_minus_floor1_G_dB": -1.64,
+   "floor2_minus_floor1_D50": -0.092
+  },
+  "pa_ub1": {
+   "label": "발코니 아래 출력 1%",
+   "rank_corr_vs_base": {
+    "C80": 0.966,
+    "D50": 0.981,
+    "G": 0.85,
+    "LF": 0.961
+   },
+   "under_minus_rest_floor1_G_dB": -2.39,
+   "same_dist_2F_minus_under_G_dB": 0.47,
+   "same_dist_D50_2F": 0.68,
+   "same_dist_D50_under": 0.85,
+   "same_dist_G_2F": 3.0,
+   "same_dist_G_under": 2.5,
+   "floor2_minus_floor1_G_dB": -1.67,
+   "floor2_minus_floor1_D50": -0.088
+  },
+  "pa_ub5": {
+   "label": "발코니 아래 출력 5%",
+   "rank_corr_vs_base": {
+    "C80": 0.955,
+    "D50": 0.982,
+    "G": 0.912,
+    "LF": 0.974
+   },
+   "under_minus_rest_floor1_G_dB": 0.21,
+   "same_dist_2F_minus_under_G_dB": -3.08,
+   "same_dist_D50_2F": 0.67,
+   "same_dist_D50_under": 0.92,
+   "same_dist_G_2F": 2.2,
+   "same_dist_G_under": 5.3,
+   "floor2_minus_floor1_G_dB": -2.92,
+   "floor2_minus_floor1_D50": -0.091
+  },
+  "pa_ceil": {
+   "label": "2층 천장 보조 4대 추가(가정)",
+   "rank_corr_vs_base": {
+    "C80": 0.552,
+    "D50": 0.584,
+    "G": 0.741,
+    "LF": 0.797
+   },
+   "under_minus_rest_floor1_G_dB": -0.88,
+   "same_dist_2F_minus_under_G_dB": 0.11,
+   "same_dist_D50_2F": 0.78,
+   "same_dist_D50_under": 0.9,
+   "same_dist_G_2F": 3.9,
+   "same_dist_G_under": 3.8,
+   "floor2_minus_floor1_G_dB": -0.52,
+   "floor2_minus_floor1_D50": 0.031
+  },
+  "pa_simple": {
+   "label": "단순 배치(메인 2 + 센터 1)",
+   "rank_corr_vs_base": {
+    "C80": 0.718,
+    "D50": 0.841,
+    "G": 0.602,
+    "LF": 0.672
+   },
+   "under_minus_rest_floor1_G_dB": -3.32,
+   "same_dist_2F_minus_under_G_dB": 1.79,
+   "same_dist_D50_2F": 0.68,
+   "same_dist_D50_under": 0.8,
+   "same_dist_G_2F": 3.1,
+   "same_dist_G_under": 1.3,
+   "floor2_minus_floor1_G_dB": -1.67,
+   "floor2_minus_floor1_D50": -0.071
+  }
+ },
+ "rank_corr_range_within_list_config": [
+  0.552,
+  0.982
+ ]
+}

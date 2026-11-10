@@ -62,6 +62,25 @@ SRC = {'natural': [dict(pos=[-17.0, 0.4, -3.86], aim=None)],
                  for z in (-12.0, -6.0, 0.0, 6.0)])}
 
 
+def _variant(ub=0.03, ceil=0.0, keep_center=False):
+    """장비 목록 구성(pa)의 변형 — 스피커 배치 가정 민감도용 (r03 할 일 #6).
+    ub: 발코니 아래 1대당 출력 비율(0이면 끔). ceil: 2층 천장 보조 스피커 1대당 출력 비율(0이면 없음, 위치는 가정).
+    keep_center=False면 센터가 나머지를 맡아 합계 1을 유지한다. True면 센터를 그대로 둔다(스피커를 끈 경우)."""
+    out = [dict(s) for s in SRC['pa'] if s['name'] != 'under_balcony' or ub > 0]
+    for s in out:
+        if s['name'] == 'under_balcony':
+            s['share'] = ub
+    if ceil > 0:   # 2층 객석 위 천장(높이 약 14m) 아래 0.8m, 2층 객석 가운데 열을 향함
+        out += [dict(pos=[-39.0, 13.2, z], aim=[-42.0, 10.5, z], share=ceil, q=3, delay=_dly([-39.0, 13.2, z], 10.0), name='ceiling_2f')
+                for z in (-10.0, -5.0, 0.0, 5.0)]
+    if not keep_center:
+        out[0]['share'] = round(1.0 - sum(s['share'] for s in out[1:]), 4)
+    return out
+
+
+SRC.update(pa_noub=_variant(ub=0, keep_center=True), pa_ub1=_variant(ub=0.01), pa_ub5=_variant(ub=0.05), pa_ceil=_variant(ceil=0.03))
+
+
 def cell(p):
     ijk = np.floor((p - lo) / H).astype(np.int64)
     ok = ((ijk >= 0) & (ijk < shape)).all(1)
