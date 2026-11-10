@@ -2,6 +2,25 @@
 
 > **저장소 배치 안내** — 이 문서는 원 작업 폴더 기준으로 쓰였다. 원래 `실험/` 폴더가 이 저장소의 `analysis/`이고, `02_제출물/web/`이 저장소 루트다. 스크립트는 `analysis/`에서 `python -I scripts/<이름>.py`로 실행한다. 원본 3D 데이터(`raw/`, 약 1.5GB)와 계산 중간 결과(`out/`)는 저장소에 넣지 않았다 — 아래 표의 주소에서 내려받아 `analysis/raw/<이름>/`에 풀면 된다. 기획서용 그림 스크립트는 넣지 않았다.
 
+## 재계산 절차 (8단계) — 지금 서비스 데이터를 만드는 순서
+`analysis/`에서 순서대로 실행한다(작성 환경 파이썬 3.14, `pip install -r requirements.txt`). 원본 3D 데이터를 아래 "원본 데이터" 표대로 `raw/`에 먼저 푼다.
+
+| # | 단계 | 명령 | 결과 |
+|---|---|---|---|
+| 1 | 좌석 추출 (GLB 의자 쿠션 덩어리 → 좌석 중심) | `python -I scripts/seats_volume.py` | `out/seat_centroids_raw.npy`, `out/volume.json` |
+| 2 | 좌석 정리 (면적이 너무 작은 덩어리 제거 → 좌석 좌표 확정) | `python -I scripts/acoustics_v0.py` | `out/seat_metrics_v0.npz` (뒤 단계는 이 파일의 좌석 좌표만 쓴다) |
+| 3 | 격자 (E57 점군 → 0.2m 점유 격자·법선·객석 영역) | `python -I scripts/build_grid.py` | `out/grid.npz` |
+| 4 | 소리 추적 (2조건 × 3대역 × 난수 4회, 약 15분) | `python -I scripts/raytrace_v2.py` | `out/v2/<조건>_<대역>_s<시드>.npz`, `out/v2/meta.npz` |
+| 5 | 지표 (D50·C80·G·LF, 반복성) | `python -I scripts/metrics_v2.py` | `out/v2/metrics.npz`, `metrics_summary.json` |
+| 6 | 미리듣기 점검 (합성 IR의 C80 vs 지표) | `python -I scripts/ir_synth.py` | `out/audio/ir_check.json` |
+| 7 | 웹 데이터 1 (좌석 지표·백분위, 포락선) | `python -I scripts/export_web.py` | `out/web/seats.json`, `out/web/env.bin` |
+| 8 | 웹 데이터 2 (JS 파일로 감싸기) | `python -I scripts/build_web_data.py` | 저장소 루트 `data/{seats,env,dry}.js` |
+
+- **이 공연장 전용 값**: 4단계 `raytrace_v2.py`의 `excluded = (seats[:, 1] > 5.0) & (seats[:, 1] < 6.6)`는 3D 모델과 점군이 맞지 않는 1층 맨 뒤 22석(모델 좌석이 점군의 발코니 밑면 바로 아래에 놓임)을 높이 구간으로 뺀다. 음원 위치(`SRC`), 무대 입구 좌표, 흡음률(`BAND`)도 이 공연장 기준이다. 다른 공연장이나 새 모델에서는 이 값들을 다시 확인한다.
+- **민감도(선택)**: `raytrace_v2.py --modes natural --bands 1000 --seeds 1 2 --aud 0.80 --outdir out/v2sens/aud080`처럼 흡음률을 바꿔 계산한다(확성은 `--modes pa --outdir out/v2sens/aud080_pa`). 그 뒤 `sensitivity_v2.py [natural|pa]`로 순위 상관을 낸다.
+- **공연 집계(선택)**: `python -I scripts/events_woori.py` → `out/events_woori_2025.json`
+- **참고용(재계산에 필요 없음)**: `acoustics_v0b.py`, `raytrace_v1.py`, `analyze_v1.py`, `inspect_3d*.py`, `plan_view.py` — 아래 v0·v1 실험 기록용
+
 
 ## 원본 데이터 (`raw/`, git 제외 — 아래 주소에서 다시 받는다)
 공공데이터포털 15127487 「올림픽공원 공연장 실감형 콘텐츠」의 파일 목록이 가리키는 기관 홈페이지 배포본. 2026-11-09 수집.
@@ -119,7 +138,7 @@
 - 미리듣기 원음: **합성음 유지**
 - 검증(로컬 서버 `.claude/launch.json` → `seat-sound-map`, 포트 8765)
   - 콘솔 오류 0, 모바일 375px 가로 넘침 0
-  - **브라우저 합성 IR의 C80 vs 계산값**: 16개 좌석·모드에서 차이 평균 0.44dB, 최대 1.1dB (`window.__seatSoundCheck(i, mode)`)
+  - **브라우저 합성 IR의 C80 vs 계산값**: 16개 좌석·모드에서 차이 평균 0.44dB, 최대 1.1dB (`window.__seatSoundCheck(i, mode)`) — 확성 재계산 전 데이터. 현재 값은 맨 아래 절(평균 0.42dB, 최대 1.09dB)
   - 비교·모드·층·지표 전환, 해시 복원 확인
 - 배포: GitHub Pages (이 저장소)
 
@@ -128,7 +147,8 @@
 
 ## 미리듣기 검증 기록 (2026-11-10)
 배포된 서비스에서 브라우저 콘솔로 `window.__seatSoundCheck(i, mode)`를 실행해, 브라우저가 합성한 임펄스응답의 C80(500~2000Hz)을 지도 값(추적 지표)과 비교했다. 좌석 8곳 × 무대 육성·스피커 확성 = 16건.
-- 결과: 차이 평균 **0.44dB**, 최대 **1.1dB** — 기록 파일 [`browser_ir_check.json`](browser_ir_check.json) (측정 시각·브라우저·좌석별 값 포함)
+- 결과(확성 재계산 전, 2026-11-09): 차이 평균 0.44dB, 최대 1.1dB
+- 현재 데이터(커밋 7097939 이후) 재측정: 차이 평균 **0.42dB**, 최대 **1.09dB** — 기록 파일 [`browser_ir_check.json`](browser_ir_check.json) (측정 시각·브라우저·좌석별 값 포함)
 - 다시 재려면: 서비스 주소를 열고 개발자 도구 콘솔에서 `await window.__seatSoundCheck(0, 'natural')` 처럼 실행한다.
 
 ## 우리금융아트홀 공연 집계 (2026-11-10)
