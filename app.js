@@ -30,7 +30,7 @@
     avg.forEach(([i], r) => { SEATS[i][m].p.TOT = Math.round(r / (avg.length - 1) * 100); });
   }
 
-  const state = { mode: 'pa', metric: 'TOT', floor: 1, sel: null, cmp: [] };
+  const state = { mode: 'pa', metric: 'D50', floor: 1, sel: null, cmp: [] };
   const $ = id => document.getElementById(id);
 
   // viridis 근사
@@ -41,7 +41,8 @@
     return `rgb(${c[0]},${c[1]},${c[2]})`;
   }
 
-  const rankText = p => (p >= 50 ? `상위 ${Math.max(1, 100 - p)}%` : `하위 ${p + 1}%`);
+  // 순위는 다섯 구간으로만 보여 준다: 이웃 좌석끼리의 작은 차이(가운데 값 약 3%p)는 의미가 작다
+  const rankText = p => (p >= 80 ? '높은 편' : p >= 60 ? '조금 높은 편' : p >= 40 ? '가운데' : p >= 20 ? '조금 낮은 편' : '낮은 편');
   function seatInfo(s) {
     const dist = STAGE_X - s.x, dz = s.z - (-3.86);
     const side = Math.abs(dz) < 5.2 ? '가운데' : (dz > 0 ? '오른쪽' : '왼쪽');
@@ -100,14 +101,14 @@
     });
     // 상위 10석 (공연장 전체)
     const top = SEATS.map((s, i) => [i, s[m].p[k], s[m][k === 'TOT' ? 'D50' : k]]).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 10);
-    $('top-title').textContent = `${METRIC[k].name} 상위 10석 (${m === 'natural' ? '무대 육성' : '스피커 확성'})`;
+    $('top-title').textContent = `${METRIC[k].name} — 높은 자리 10곳 (${m === 'natural' ? '무대 육성' : '스피커 확성'})`;
     $('top-list').innerHTML = '';
     top.forEach(([i], r) => {
       const li = document.createElement('li'), b = document.createElement('button'), inf = seatInfo(SEATS[i]);
       b.type = 'button'; b.textContent = `${r + 1}. ${inf.title} ${i + 1}번 · 무대에서 ${(STAGE_X - SEATS[i].x).toFixed(0)}m`;
       b.addEventListener('click', () => select(i, true)); li.appendChild(b); $('top-list').appendChild(li);
     });
-    $('mode-note').textContent = MODE_NOTE[m];
+    $('mode-note').textContent = MODE_NOTE[m] + (m === 'pa' && state.floor === 2 ? ' 2층의 순위는 공개 장비 목록대로 "2층용 보조 스피커 없음"을 가정한 결과이며, 2층에 보조 스피커가 있으면 올라갑니다.' : '');
   }
 
   // ---------- 좌석 상세 ----------
@@ -122,7 +123,7 @@
     const s = SEATS[state.sel], m = state.mode, v = s[m], inf = seatInfo(s);
     $('seat-title').textContent = inf.title; $('seat-sub').textContent = inf.sub;
     const bars = $('bars'); bars.innerHTML = '';
-    for (const k of ['TOT', 'D50', 'C80', 'G', 'LF']) {
+    for (const k of ['D50', 'C80', 'G', 'LF', 'TOT']) {
       const row = document.createElement('div'); row.className = 'bar-row';
       row.innerHTML = `<span>${METRIC[k].name}</span><div class="bar"><i style="width:${Math.max(3, v.p[k])}%;background:${color(v.p[k])}"></i></div><span class="pct">${rankText(v.p[k])}</span><span class="bar-desc">${METRIC[k].desc}</span>`;
       bars.appendChild(row);
@@ -168,7 +169,7 @@
     const box = $('compare'); box.hidden = state.cmp.length === 0; if (box.hidden) return;
     const m = state.mode, S2 = state.cmp.map(i => SEATS[i]);
     const head = '<tr><th></th>' + S2.map((s, j) => `<th><span class="tag" style="background:var(${j ? '--cmp-b' : '--cmp-a'})">${j ? 'B' : 'A'}</span>${seatInfo(s).title}</th>`).join('') + '</tr>';
-    const rows = ['TOT', 'D50', 'C80', 'G', 'LF'].map(k => `<tr><td>${METRIC[k].name}</td>` + S2.map(s => `<td>${rankText(s[m].p[k])}${k === 'TOT' ? '' : ` <span class="small">(${s[m][k]}${UNIT[k]})</span>`}</td>`).join('') + '</tr>').join('');
+    const rows = ['D50', 'C80', 'G', 'LF', 'TOT'].map(k => `<tr><td>${METRIC[k].name}</td>` + S2.map(s => `<td>${rankText(s[m].p[k])}${k === 'TOT' ? '' : ` <span class="small">(${s[m][k]}${UNIT[k]})</span>`}</td>`).join('') + '</tr>').join('');
     $('cmp-table').innerHTML = head + rows;
     const bp = $('cmp-play'); bp.innerHTML = '';
     state.cmp.forEach((i, j) => {

@@ -155,12 +155,14 @@ def main():
         c.call('Page.startScreencast', {'format': 'jpeg', 'quality': 88, 'maxWidth': W, 'maxHeight': H, 'everyNthFrame': 1})
         wait(4.5)
 
-        cap('① 지표를 고르면 지도 색이 바뀝니다', '색은 값이 아니라 이 공연장 안에서의 순위입니다 (밝을수록 상위)')
+        cap('① 지표를 고르면 지도 색이 바뀝니다 — 소리 크기', '색은 값이 아니라 이 공연장 안에서의 순위입니다 (밝을수록 높음)')
         move('#metric'); c.js('__hit()')
-        c.js("(() => { const m = document.getElementById('metric'); m.value = 'D50'; m.dispatchEvent(new Event('change', {bubbles: true})); })()")
-        wait(4.0)
+        setm = lambda k: c.js("(() => { const m = document.getElementById('metric'); m.value = '%s'; m.dispatchEvent(new Event('change', {bubbles: true})); })()" % k)
+        setm('G'); wait(3.0)
+        cap('① 기본 지표는 "대사가 또렷한 정도"입니다', '색은 값이 아니라 이 공연장 안에서의 순위입니다 (밝을수록 높음)')
+        c.js('__hit()'); setm('D50'); wait(2.5)
 
-        cap('② 좌석을 누르면 그 자리의 소리 특성이 나옵니다', '지표별 순위와, 소리가 시간 순서로 도착하는 모습(소리 도착 그래프)')
+        cap('② 좌석을 누르면 그 자리의 소리 특성이 나옵니다', '지표별 순위(다섯 구간)와, 소리가 시간 순서로 도착하는 모습(소리 도착 그래프)')
         click('#map circle[data-i="306"]'); wait(4.5)
 
         cap('③ 먼저 원음을 듣습니다', '직접 합성한 박수·피아노 소리 (헤드폰 권장)')
@@ -172,7 +174,7 @@ def main():
         cap('④ 다른 자리와 비교합니다 — 먼저 이 자리를 담고', '[비교에 담기]')
         click('#add-compare'); wait(1.6)
         scroll_top()
-        cap('④ 2층에서 좌석을 고릅니다', '2층은 지도가 따로 그려집니다')
+        cap('④ 2층에서 좌석을 고릅니다', '2층에서는 스피커 가정 안내가 지도 위에 함께 나옵니다')
         click('button[data-floor="2"]'); wait(1.5)
         click(f'#map circle[data-i="{seat2}"]'); wait(2.5)
 
