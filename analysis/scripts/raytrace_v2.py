@@ -79,6 +79,8 @@ def _variant(ub=0.03, ceil=0.0, keep_center=False):
 
 
 SRC.update(pa_noub=_variant(ub=0, keep_center=True), pa_ub1=_variant(ub=0.01), pa_ub5=_variant(ub=0.05), pa_ceil=_variant(ceil=0.03))
+# 무대 육성 음원 위치 민감도(r04 할 일 #5): 무대 안쪽으로 3m, 옆으로 3m 옮긴 변형
+SRC.update(natural_back=[dict(pos=[-14.0, 0.4, -3.86], aim=None)], natural_side=[dict(pos=[-17.0, 0.4, -0.86], aim=None)])
 
 
 def cell(p):

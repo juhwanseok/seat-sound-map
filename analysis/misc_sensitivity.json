@@ -1,0 +1,99 @@
+{
+ "condition": "1kHz, 시드 1·2 평균. 순위 일치도 = 스피어만 순위 상관(유효 1,172석)",
+ "variants": {
+  "natural_back": {
+   "label": "무대 육성 음원을 무대 안쪽으로 3m",
+   "base": "natural",
+   "T_fit_s": 2.0,
+   "rank_corr_vs_base": {
+    "C80": 0.692,
+    "D50": 0.8,
+    "G": 0.942,
+    "LF": 0.759,
+    "TOT": 0.646
+   }
+  },
+  "natural_side": {
+   "label": "무대 육성 음원을 옆으로 3m",
+   "base": "natural",
+   "T_fit_s": 1.46,
+   "rank_corr_vs_base": {
+    "C80": 0.592,
+    "D50": 0.741,
+    "G": 0.97,
+    "LF": 0.708,
+    "TOT": 0.68
+   }
+  },
+  "natural_R05": {
+   "label": "무대 육성, 받는 공 반지름 0.5m",
+   "base": "natural",
+   "T_fit_s": 1.47,
+   "rank_corr_vs_base": {
+    "C80": 0.865,
+    "D50": 0.913,
+    "G": 0.953,
+    "LF": 0.876,
+    "TOT": 0.844
+   }
+  },
+  "pa_R05": {
+   "label": "스피커 확성, 받는 공 반지름 0.5m",
+   "base": "pa",
+   "T_fit_s": 1.47,
+   "rank_corr_vs_base": {
+    "C80": 0.905,
+    "D50": 0.946,
+    "G": 0.978,
+    "LF": 0.897,
+    "TOT": 0.915
+   }
+  }
+ },
+ "repeat_s12_vs_s34": {
+  "natural": {
+   "C80": 0.9,
+   "D50": 0.95,
+   "G": 0.991,
+   "LF": 0.947,
+   "TOT": 0.921
+  },
+  "pa": {
+   "C80": 0.916,
+   "D50": 0.963,
+   "G": 0.997,
+   "LF": 0.964,
+   "TOT": 0.96
+  }
+ },
+ "summary": {
+  "source_position_min_max_4metrics": [
+   0.592,
+   0.97
+  ],
+  "receiver_radius_min_max_4metrics": [
+   0.865,
+   0.978
+  ]
+ },
+ "d50_within_floor_pa_1k": {
+  "1층": {
+   "n": 820,
+   "n_top20": 164,
+   "median_top20": 0.9,
+   "median_bottom20": 0.73,
+   "median_all": 0.77,
+   "p10": 0.73,
+   "p90": 0.9
+  },
+  "2층": {
+   "n": 352,
+   "n_top20": 70,
+   "median_top20": 0.73,
+   "median_bottom20": 0.66,
+   "median_all": 0.69,
+   "p10": 0.66,
+   "p90": 0.73
+  }
+ }
+}
