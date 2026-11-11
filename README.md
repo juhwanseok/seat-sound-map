@@ -4,6 +4,8 @@
 
 2026년도 한국체육산업개발(주) 공공데이터 활용 경진대회 출품 시연본이며, 기관의 공식 서비스가 아니다.
 
+시연 영상(1분, 소리 포함): [demo.mp4](https://juhwanseok.github.io/seat-sound-map/demo.mp4) — 공개된 화면을 `analysis/scripts/record_demo.py`로 자동 조작해 녹화했다(자막과 커서 표시는 녹화할 때만 덧붙인 것).
+
 ## 실행
 빌드 단계·서버·외부 라이브러리·API 키가 없다. 정적 호스팅(GitHub Pages 등)에 이 폴더를 그대로 올리면 된다.
 로컬에서는 이 폴더에서:
